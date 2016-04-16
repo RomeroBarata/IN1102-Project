@@ -2,14 +2,12 @@
 R_PATH <- "R"
 DATA_PATH <- "data"
 FILES_NAMES <- c("mfeat-fac", "mfeat-fou", "mfeat-kar")
+DISS_FILES_NAMES <- c("mfeat-fac-diss", "mfeat-fou-diss",
+                      "mfeat-kar-diss")
 
-# Source files
+# Creates the dissimilarity matrices if they were not created
 source(file.path(R_PATH, "data_functions.R"))
 
-# Read the data sets
-data_sets_list <- readDataSets(DATA_PATH, FILES_NAMES)
-
-# Compute the dissimilarity matrix for each data set
-diss_matrix_list <- lapply(data_sets_list, function(data_set){
-    as.matrix(cluster::daisy(data_set, metric = "euclidean"))
-})
+print("Loading dissimilarity matrices.", quote = FALSE)
+diss_matrix_list <- loadDissMtcs(DATA_PATH, FILES_NAMES,
+                                 DISS_FILES_NAMES)
