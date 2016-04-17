@@ -39,7 +39,7 @@ predict.bayes <- function(object, newdata){
 
 dmvnorm <- function(x, mu, Sigma, log = TRUE){
     if(log){
-        p1 <- -0.5 * t(x - mu) %*% MASS::ginv(Sigma) %*% (x - mu)
+        p1 <- -0.5 * t(x - mu) %*% solve(Sigma) %*% (x - mu)
         p2 <- -0.5 * as.numeric(unlist(determinant(Sigma))["modulus"])
         return (p1 + p2)
     } else{
