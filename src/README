@@ -1,0 +1,16 @@
+mvfcm [OPTIONS] nobjs nmtxs [FILE...]
+
+OPTIONS:
+    -k  number of clusters, default is 3
+    -q  cardinality of medoids, default is 3 (for this project, set it to 1)
+    -T  maximum number of iterations for convergence
+    -e  epsilon parameter, default is 1e-6
+    -t  theta parameter, default is 2e-2
+    -m  m parameter, default is 2
+    -i  number of instances of the model (i.e. number of repertitions)
+--Rfile name of the R file to dump the data from the best instance
+
+PARAMETERS:
+    nobjs   number of objects
+    nmtxs   number of matrices
+[FILE...]   'nmtx' filenames
