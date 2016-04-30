@@ -1,15 +1,39 @@
 # Define constants
 R_PATH <- "R"
 DATA_PATH <- "data"
-FILES_NAMES <- c("mfeat-fac", "mfeat-fou", "mfeat-kar")
+FILES_NAMES <- c("mfeat-fou", "mfeat-kar", "mfeat-zer")
 
 # Source files
+source(file.path(R_PATH, "bayes_functions.R"))
+source(file.path(R_PATH, "cv_functions.R"))
 source(file.path(R_PATH, "data_functions.R"))
+source(file.path(R_PATH, "svm_functions.R"))
 
 # Read the data sets
 data_sets_list <- readDataSets(DATA_PATH, FILES_NAMES)
 
 # Compute the dissimilarity matrix for each data set
-diss_matrix_list <- lapply(data_sets_list, function(data_set){
-    as.matrix(cluster::daisy(data_set, metric = "euclidean"))
-})
+# diss_matrix_list <- lapply(data_sets_list, function(data_set){
+#     as.matrix(cluster::daisy(data_set, metric = "euclidean"))
+# })
+
+# Add the Class variable to each data set
+data_sets_list <- addClasses(data_sets_list)
+# Remove repeated and inconsistent examples
+data_sets_list <- cleanDataSets(data_sets_list)
+
+# Question 2(a)
+# Train an ensemble of bayes classifiers
+bayes_ens <- repeatedCVTrain(method = "bayesEnsemble", 
+                             data_list = data_sets_list, 
+                             seed = 1235, folds = 5, repeats = 3)
+
+# Question 2(b)
+svm_ens <- repeatedCVTrain(method = "svmEnsemble", 
+                           data_list = data_sets_list, 
+                           method_args = list(C = 1), 
+                           seed = 1235, folds = 5, repeats = 3)
+
+# Print the results
+print(bayes_ens)
+print(svm_ens)
