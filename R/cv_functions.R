@@ -16,8 +16,9 @@ createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps
 }
 
-repeatedCVTrain <- function(method, data_list, method_args = list(), ...){
+repeatedCVTrain <- function(method, data_list, method_args = list(), seed = NULL, ...){
     y <- data_list[[1]][ncol(data_list[[1]])]
+    if (!is.null(seed)) set.seed(seed)
     sps <- createStratifiedFolds(y, ...)
     results <- as.vector(laply(sps, cvTrain, data_list, method, method_args))
     
