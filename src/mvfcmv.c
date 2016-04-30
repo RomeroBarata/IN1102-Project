@@ -67,6 +67,7 @@ void mtxcpy(double **destination, double **source, size_t nrow,
         memcpy(destination[i], source[i], sizeof(double) * ncol);
     }
 }
+
 void print_weights() {
 	printf("Weights:\n");
 	size_t j;
