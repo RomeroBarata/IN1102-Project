@@ -1,3 +1,5 @@
+library(plyr)
+
 createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps <- list()
     classes_dist <- daply(y, .(Class), nrow)
@@ -14,29 +16,38 @@ createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps
 }
 
-repeatedCVTrainBayes <- function(data_list, ...){
+repeatedCVTrain <- function(method, data_list, method_args = list(), ...){
     y <- data_list[[1]][ncol(data_list[[1]])]
     sps <- createStratifiedFolds(y, ...)
-    results <- as.vector(laply(sps, cvTrainBayes, data_list))
+    results <- as.vector(laply(sps, cvTrain, data_list, method, method_args))
     
     final_results <- list(Accuracy = results, 
                           Accuracy_MEAN = mean(results), Accuracy_SD = sd(results))
 }
 
-cvTrainBayes <- function(spartition, data_list){
+cvTrain <- function(spartition, data_list, method, method_args = list()){
     nfolds <- length(unique(spartition))
     accuracy <- vector(mode = "numeric", length = nfolds)
     for(i in 1:nfolds){
-        bayes_model1 <- bayes(data_list[[1]][!(spartition == i), ])
-        bayes_model2 <- bayes(data_list[[2]][!(spartition == i), ])
-        bayes_model3 <- bayes(data_list[[3]][!(spartition == i), ])
+        training_list <- splitCVTrain(data_list, spartition, i)
+        model <- do.call(method, c(list(training_list), method_args))
         
-        predictions <- majorityVote(list(bayes_model1, bayes_model2, bayes_model3), 
-                                    list(data_list[[1]][spartition == i, ], 
-                                         data_list[[2]][spartition == i, ], 
-                                         data_list[[3]][spartition == i, ]))
+        testing_list <- splitCVTest(data_list, spartition, i)
+        predictions <- predict(model, testing_list)
         
         accuracy[i] <- mean(predictions == data_list[[1]][spartition == i, ]$Class)
     }
     accuracy
+}
+
+splitCVTrain <- function(data_sets_list, spartition, i){
+    lapply(data_sets_list, function(data, spartition, i){
+        data[!(spartition == i), ]
+    }, spartition = spartition, i = i)
+}
+
+splitCVTest <- function(data_sets_list, spartition, i){
+    lapply(data_sets_list, function(data, spartition, i){
+        data[spartition == i, -ncol(data)]
+    }, spartition = spartition, i = i)
 }

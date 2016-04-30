@@ -12,6 +12,12 @@ bayes <- function(training){
     bayes_model
 }
 
+bayesEnsemble <- function(data_sets_list){
+    bayes_ens <- lapply(data_sets_list, function(training) bayes(training))
+    class(bayes_ens) <- "bayes_ensemble"
+    bayes_ens
+}
+
 buildModel <- function(mus, cov_mats, a_priori_probs){
     bayes_model <- list()
     for(i in 1:nrow(mus)){
@@ -31,10 +37,16 @@ buildModel <- function(mus, cov_mats, a_priori_probs){
 
 predict.bayes <- function(object, newdata){
     predictions <- sapply(object, function(dis_fun, newdata){
-        apply(newdata[, -ncol(newdata)], 1, dmvnorm, 
+        apply(newdata, 1, dmvnorm, 
               mu = dis_fun$mu, Sigma = dis_fun$cov_mat) + log(dis_fun$a_priori)
     }, newdata = newdata)
     predictions <- apply(predictions, 1, which.max) - 1
+}
+
+predict.bayes_ensemble <- function(object, newdata){
+    # object: A list of bayes classifiers
+    # newdata: A list of data sets to predict
+    majorityVote(object, newdata)
 }
 
 dmvnorm <- function(x, mu, Sigma, log = TRUE){
