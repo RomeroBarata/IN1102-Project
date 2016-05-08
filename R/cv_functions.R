@@ -16,24 +16,36 @@ createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps
 }
 
-repeatedCVTrain <- function(method, data_list, method_args = list(), seed = NULL, ...){
+repeatedCVTrain <- function(method, data_list, 
+                            method_args = list(), seed = NULL, pre_process = NULL, ...){
     y <- data_list[[1]][ncol(data_list[[1]])]
     if (!is.null(seed)) set.seed(seed)
     sps <- createStratifiedFolds(y, ...)
-    results <- as.vector(laply(sps, cvTrain, data_list, method, method_args))
+    results <- as.vector(laply(sps, cvTrain, data_list, method, method_args, pre_process))
     
     final_results <- list(Accuracy = results, 
                           Accuracy_MEAN = mean(results), Accuracy_SD = sd(results))
 }
 
-cvTrain <- function(spartition, data_list, method, method_args = list()){
+cvTrain <- function(spartition, data_list, 
+                    method, method_args = list(), pre_process = NULL){
     nfolds <- length(unique(spartition))
     accuracy <- vector(mode = "numeric", length = nfolds)
     for(i in 1:nfolds){
         training_list <- splitCVTrain(data_list, spartition, i)
+        # Pre-process the training sets
+        pre_processed_training_list <- lapply(training_list, 
+                                              preProcessTraining, pre_process = pre_process)
+        training_list <- extractTrainingSets(pre_processed_training_list)
+        # Train the model
         model <- do.call(method, c(list(training_list), method_args))
         
         testing_list <- splitCVTest(data_list, spartition, i)
+        # Pre-process the training sets
+        testing_list <- mapply(preProcessTesting, 
+                               testing_list, pre_processed_training_list, 
+                               MoreArgs = list(pre_process = pre_process), SIMPLIFY = FALSE)
+        # Make the predictions
         predictions <- predict(model, testing_list)
         
         accuracy[i] <- mean(predictions == data_list[[1]][spartition == i, ]$Class)
