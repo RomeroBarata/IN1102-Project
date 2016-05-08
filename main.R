@@ -7,6 +7,7 @@ FILES_NAMES <- c("mfeat-fou", "mfeat-kar", "mfeat-zer")
 source(file.path(R_PATH, "bayes_functions.R"))
 source(file.path(R_PATH, "cv_functions.R"))
 source(file.path(R_PATH, "data_functions.R"))
+source(file.path(R_PATH, "nn_functions.R"))
 source(file.path(R_PATH, "svm_functions.R"))
 
 # Read the data sets
@@ -34,6 +35,13 @@ svm_ens <- repeatedCVTrain(method = "svmEnsemble",
                            method_args = list(C = 1), 
                            seed = 1235, folds = 5, repeats = 3)
 
+nn_ens <- repeatedCVTrain(method = "nnEnsemble", 
+                          data_list = data_sets_list, 
+                          method_args = list(size = 9, decay = 5e-2, maxit = 1500), 
+                          seed = 1235, pre_process = c("center", "scale"), 
+                          folds = 5, repeats = 3)
+
 # Print the results
 print(bayes_ens)
 print(svm_ens)
+print(nn_ens)
