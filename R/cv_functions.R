@@ -17,7 +17,8 @@ createStratifiedFolds <- function(y, folds = 10, repeats = 5){
 }
 
 repeatedCVTrain <- function(method, data_list, 
-                            method_args = list(), seed = NULL, pre_process = NULL, ...){
+                            method_args = list(list()), 
+                            seed = NULL, pre_process = NULL, ...){
     y <- data_list[[1]][ncol(data_list[[1]])]
     if (!is.null(seed)) set.seed(seed)
     sps <- createStratifiedFolds(y, ...)
@@ -28,8 +29,9 @@ repeatedCVTrain <- function(method, data_list,
 }
 
 cvTrain <- function(spartition, data_list, 
-                    method, method_args = list(), pre_process = NULL){
+                    method, method_args = list(list()), pre_process = NULL){
     nfolds <- length(unique(spartition))
+    method_args <- if (sum(sapply(method_args, length)) > 0) method_args else NULL
     accuracy <- vector(mode = "numeric", length = nfolds)
     for(i in 1:nfolds){
         training_list <- splitCVTrain(data_list, spartition, i)
@@ -38,7 +40,10 @@ cvTrain <- function(spartition, data_list,
                                               preProcessTraining, pre_process = pre_process)
         training_list <- extractTrainingSets(pre_processed_training_list)
         # Train the model
-        model <- do.call(method, c(list(training_list), method_args))
+        if (!is.null(method_args))
+            model <- do.call(method, list(training_list, method_args))
+        else
+            model <- do.call(method, list(training_list))
         
         testing_list <- splitCVTest(data_list, spartition, i)
         # Pre-process the training sets

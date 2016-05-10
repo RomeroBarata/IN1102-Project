@@ -30,14 +30,20 @@ bayes_ens <- repeatedCVTrain(method = "bayesEnsemble",
                              seed = 1235, folds = 5, repeats = 3)
 
 # Question 2(b)
+svms_params <- list(list(C = 0.5), 
+                    list(C = 2), 
+                    list(C = 0.25))
 svm_ens <- repeatedCVTrain(method = "svmEnsemble", 
                            data_list = data_sets_list, 
-                           method_args = list(C = 1), 
+                           method_args = svms_params, 
                            seed = 1235, folds = 5, repeats = 3)
 
+nn_params <- list(list(size = 9, decay = 5e-2, maxit = 1500), 
+                  list(size = 9, decay = 5e-2, maxit = 1500), 
+                  list(size = 9, decay = 5e-2, maxit = 1500))
 nn_ens <- repeatedCVTrain(method = "nnEnsemble", 
                           data_list = data_sets_list, 
-                          method_args = list(size = 9, decay = 5e-2, maxit = 1500), 
+                          method_args = nn_params, 
                           seed = 1235, pre_process = c("center", "scale"), 
                           folds = 5, repeats = 3)
 
