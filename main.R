@@ -1,13 +1,47 @@
 # Define constants
 R_PATH <- "R"
 DATA_PATH <- "data"
-FILES_NAMES <- c("mfeat-fac", "mfeat-fou", "mfeat-kar")
-DISS_FILES_NAMES <- c("mfeat-fac-diss", "mfeat-fou-diss",
-                      "mfeat-kar-diss")
+FILES_NAMES <- c("mfeat-fou", "mfeat-kar", "mfeat-zer")
 
-# Creates the dissimilarity matrices if they were not created
+# Source files
+source(file.path(R_PATH, "bayes_functions.R"))
+source(file.path(R_PATH, "cv_functions.R"))
 source(file.path(R_PATH, "data_functions.R"))
+source(file.path(R_PATH, "nn_functions.R"))
+source(file.path(R_PATH, "svm_functions.R"))
 
-print("Loading dissimilarity matrices.", quote = FALSE)
-diss_matrix_list <- loadDissMtcs(DATA_PATH, FILES_NAMES,
-                                 DISS_FILES_NAMES)
+# Read the data sets
+data_sets_list <- readDataSets(DATA_PATH, FILES_NAMES)
+
+# Compute the dissimilarity matrix for each data set
+# diss_matrix_list <- lapply(data_sets_list, function(data_set){
+#     as.matrix(cluster::daisy(data_set, metric = "euclidean"))
+# })
+
+# Add the Class variable to each data set
+data_sets_list <- addClasses(data_sets_list)
+# Remove repeated and inconsistent examples
+data_sets_list <- cleanDataSets(data_sets_list)
+
+# Question 2(a)
+# Train an ensemble of bayes classifiers
+bayes_ens <- repeatedCVTrain(method = "bayesEnsemble", 
+                             data_list = data_sets_list, 
+                             seed = 1235, folds = 5, repeats = 3)
+
+# Question 2(b)
+svm_ens <- repeatedCVTrain(method = "svmEnsemble", 
+                           data_list = data_sets_list, 
+                           method_args = list(C = 1), 
+                           seed = 1235, folds = 5, repeats = 3)
+
+nn_ens <- repeatedCVTrain(method = "nnEnsemble", 
+                          data_list = data_sets_list, 
+                          method_args = list(size = 9, decay = 5e-2, maxit = 1500), 
+                          seed = 1235, pre_process = c("center", "scale"), 
+                          folds = 5, repeats = 3)
+
+# Print the results
+print(bayes_ens)
+print(svm_ens)
+print(nn_ens)
