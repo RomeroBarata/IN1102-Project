@@ -1,3 +1,4 @@
+library(PMCMR)
 # Define constants
 R_PATH <- "R"
 DATA_PATH <- "data"
@@ -24,24 +25,45 @@ data_sets_list <- addClasses(data_sets_list)
 data_sets_list <- cleanDataSets(data_sets_list)
 
 # Question 2(a)
+seed = 1235
+folds <- 40
+repeats <- 1
 # Train an ensemble of bayes classifiers
 bayes_ens <- repeatedCVTrain(method = "bayesEnsemble", 
                              data_list = data_sets_list, 
-                             seed = 1235, folds = 5, repeats = 3)
+                             seed = seed, folds = folds,
+                             repeats = repeats)
 
 # Question 2(b)
 svm_ens <- repeatedCVTrain(method = "svmEnsemble", 
                            data_list = data_sets_list, 
                            method_args = list(C = 1), 
-                           seed = 1235, folds = 5, repeats = 3)
+                           seed = seed, folds = folds,
+                           repeats = repeats)
 
 nn_ens <- repeatedCVTrain(method = "nnEnsemble", 
                           data_list = data_sets_list, 
                           method_args = list(size = 9, decay = 5e-2, maxit = 1500), 
-                          seed = 1235, pre_process = c("center", "scale"), 
-                          folds = 5, repeats = 3)
+                          seed = seed, pre_process = c("center", "scale"), 
+                          folds = folds, repeats = repeats)
 
 # Print the results
 print(bayes_ens)
 print(svm_ens)
 print(nn_ens)
+
+# Table with the accuracies for each fold of each model
+accuracy_matrix <- matrix(c(bayes_ens$Accuracy, svm_ens$Accuracy,
+                           nn_ens$Accuracy), nrow = folds, ncol = 3,
+                         dimnames = list(NULL, c("bayes", "svm", "nn")
+                                         ))
+
+print(accuracy_matrix)
+
+# Performing statistical test
+test <- friedman.test(accuracy_matrix);
+print(test);
+
+# Performing statistical post-test
+post_test <- posthoc.friedman.nemenyi.test(accuracy_matrix)
+print(post_test)

@@ -8,12 +8,6 @@ readDataSets <- function(data_path, files_names){
 # not generated, it will generate all of them and save into a file.
 # 'data_files' and 'diss_data_files' must have the same length.
 loadDissMtcs <- function(data_path, data_files, diss_data_files) {
-#    input_files <- c("mfeat-fac", "mfeat-fou", "mfeat-kar")
-
-#    output_files <- c(file.path(data_path, "mfeat-fac-diss"),
-#                      file.path(data_path, "mfeat-fou-diss"),
-#                      file.path(data_path, "mfeat-kar-diss"))
-
     input_files <- data_files
 
     output_files <- diss_data_files
