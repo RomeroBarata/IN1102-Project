@@ -45,7 +45,7 @@ loadDissMtcs <- function(data_path, data_files, diss_data_files) {
 }
 
 addClasses <- function(data_sets_list){
-    lapply(data_sets_list, transform, Class = rep(0:9, each = 200))
+    lapply(data_sets_list, transform, Class = factor(rep(0:9, each = 200)))
 }
 
 cleanDataSets <- function(data_sets_list){
@@ -93,17 +93,22 @@ extractTrainingSets <- function(pre_processed_training_list){
     lapply(pre_processed_training_list, function(x) x$training)
 }
 
-preProcessTesting <- function(testing, pre_processed_training, pre_process = NULL){
+extractPreProcessArgs <- function(pre_processed_training_list){
+    lapply(pre_processed_training_list, 
+           function(x) list(center = x$center, scale_factor = x$scale_factor))
+}
+
+preProcessTesting <- function(testing, pre_processed_args, pre_process = NULL){
     if (is.null(pre_process)) return(testing)
     
     if ("center" %in% pre_process){
-        center <- pre_processed_training$center
+        center <- pre_processed_args$center
         testing <- t(apply(testing, 1, 
                            function(x, center) x - center, 
                            center = center))
     }
     if ("scale" %in% pre_process){
-        scale_factor <- pre_processed_training$scale_factor
+        scale_factor <- pre_processed_args$scale_factor
         testing <- t(apply(testing, 1, 
                            function(x, scale_factor) x / scale_factor, 
                            scale_factor = scale_factor))

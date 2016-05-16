@@ -12,7 +12,7 @@ bayes <- function(training){
     bayes_model
 }
 
-bayesEnsemble <- function(data_sets_list){
+bayesEnsemble <- function(data_sets_list, ...){
     bayes_ens <- lapply(data_sets_list, function(training) bayes(training))
     class(bayes_ens) <- "bayes_ensemble"
     bayes_ens
@@ -43,7 +43,7 @@ predict.bayes <- function(object, newdata){
     predictions <- apply(predictions, 1, which.max) - 1
 }
 
-predict.bayes_ensemble <- function(object, newdata){
+predict.bayes_ensemble <- function(object, newdata, ...){
     # object: A list of bayes classifiers
     # newdata: A list of data sets to predict
     majorityVote(object, newdata)
@@ -60,12 +60,4 @@ dmvnorm <- function(x, mu, Sigma, log = TRUE){
         p2 <- exp(-0.5 * t(x - mu) %*% solve(Sigma) %*% (x - mu))
         return (p1 * p2)
     }
-}
-
-majorityVote <- function(objects_list, newdata_list){
-    predictions <- mapply(predict, objects_list, newdata_list)
-    predictions <- apply(predictions, 1, function(row){
-        idx <- which.max(table(row))
-        as.integer(names(table(row))[idx])
-    })
 }

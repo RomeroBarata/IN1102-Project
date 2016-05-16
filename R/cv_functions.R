@@ -35,23 +35,15 @@ cvTrain <- function(spartition, data_list,
     accuracy <- vector(mode = "numeric", length = nfolds)
     for(i in 1:nfolds){
         training_list <- splitCVTrain(data_list, spartition, i)
-        # Pre-process the training sets
-        pre_processed_training_list <- lapply(training_list, 
-                                              preProcessTraining, pre_process = pre_process)
-        training_list <- extractTrainingSets(pre_processed_training_list)
         # Train the model
         if (!is.null(method_args))
-            model <- do.call(method, list(training_list, method_args))
+            model <- do.call(method, list(training_list, method_args, pre_process))
         else
-            model <- do.call(method, list(training_list))
+            model <- do.call(method, list(training_list, pre_process))
         
         testing_list <- splitCVTest(data_list, spartition, i)
-        # Pre-process the training sets
-        testing_list <- mapply(preProcessTesting, 
-                               testing_list, pre_processed_training_list, 
-                               MoreArgs = list(pre_process = pre_process), SIMPLIFY = FALSE)
         # Make the predictions
-        predictions <- predict(model, testing_list)
+        predictions <- predict(model, testing_list, pre_process = pre_process)
         
         accuracy[i] <- mean(predictions == data_list[[1]][spartition == i, ]$Class)
     }

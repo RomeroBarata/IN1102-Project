@@ -7,6 +7,8 @@ FILES_NAMES <- c("mfeat-fou", "mfeat-kar", "mfeat-zer")
 source(file.path(R_PATH, "bayes_functions.R"))
 source(file.path(R_PATH, "cv_functions.R"))
 source(file.path(R_PATH, "data_functions.R"))
+source(file.path(R_PATH, "misc_functions.R"))
+source(file.path(R_PATH, "mixture_functions.R"))
 source(file.path(R_PATH, "nn_functions.R"))
 source(file.path(R_PATH, "svm_functions.R"))
 
@@ -38,16 +40,26 @@ svm_ens <- repeatedCVTrain(method = "svmEnsemble",
                            method_args = svms_params, 
                            seed = 1235, folds = 5, repeats = 3)
 
-nn_params <- list(list(size = 9, decay = 5e-2, maxit = 1500), 
-                  list(size = 9, decay = 5e-2, maxit = 1500), 
-                  list(size = 9, decay = 5e-2, maxit = 1500))
+nns_params <- list(list(size = 9, decay = 5e-2, maxit = 1500), 
+                   list(size = 9, decay = 5e-2, maxit = 1500), 
+                   list(size = 9, decay = 5e-2, maxit = 1500))
 nn_ens <- repeatedCVTrain(method = "nnEnsemble", 
                           data_list = data_sets_list, 
-                          method_args = nn_params, 
+                          method_args = nns_params, 
                           seed = 1235, pre_process = c("center", "scale"), 
                           folds = 5, repeats = 3)
+
+# Question 2(c)
+mix_params <- list(svm_ensemble = svms_params, 
+                   nn_ensemble = nns_params)
+mix_ens <- repeatedCVTrain(method = "mixture", 
+                           data_list = data_sets_list, 
+                           method_args = mix_params, 
+                           seed = 1235, pre_process = c("center", "scale"), 
+                           folds = 5, repeats = 3)
 
 # Print the results
 print(bayes_ens)
 print(svm_ens)
 print(nn_ens)
+print(mix_ens)
