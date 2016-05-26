@@ -4,10 +4,10 @@ readDataSets <- function(data_path, files_names){
     }, data_path = data_path)
 }
 
-# This function loads the dissimilarity matrices. If any matrix was
-# not generated, it will generate all of them and save into a file.
-# 'data_files' and 'diss_data_files' must have the same length.
-loadDissMtcs <- function(data_path, data_files, diss_data_files) {
+# This function generates the dissimilarity matrices. If any matrix
+# was not generated, it will generate all of them and save into a
+# file.'data_files' and 'diss_data_files' must have the same length.
+genDissMtcs <- function(data_path, data_files, diss_data_files) {
     input_files <- data_files
 
     output_files <- diss_data_files
@@ -32,10 +32,8 @@ loadDissMtcs <- function(data_path, data_files, diss_data_files) {
                                   col.names = FALSE)
                   }
               }, data_path = data_path)
-        return(diss_matrix_list)
-    } else {
-        return(readDataSets(".", output_files))
     }
+    return("Done")
 }
 
 addClasses <- function(data_sets_list){
