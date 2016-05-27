@@ -10,25 +10,47 @@
 #include <math.h>
 #include <string.h>
 
+// Error margin for float point comparison
 #define FPOINT_OFFSET 1e-7
 
+// Maximum number of iterations
 size_t max_iter;
+// Number of objects
 int objc;
+// Number of clusters
 size_t clustc;
+// Parameter m
 double mfuz;
+// 1.0 / (m - 1.0)
 double mfuzval;
+// Dissimilarity matrices
 double ***dmatrix;
+// Number of dissimilarity matrices
 int dmatrixc;
+// Medoids
 size_t ***medoids;
+// Cardinality of medoids
 size_t medoids_card;
+// Matrices wieghts
 double **weights;
+// Membership matrix
 double **memb;
+// Epsilon value
 double epsilon;
+// Theta value
 double theta;
+// Adequacy broken down for each object
 double *parc_obj_adeq;
+// Adequacy broken down for each cluster
 double *parc_cluster_adeq;
+// Previous adequacy value
 double prev_adeq;
 
+// Attemps to open a file named by 'fname' and loads the matrix into
+// 'matrix'.
+// Return:
+//  'true' if the data was succesfully loaded into 'matrix', 'false'
+//  otherwise.
 bool load_data(char *fname, double **matrix) {
 	FILE *ifile = fopen(fname, "r");
 	if(!ifile) {
@@ -48,18 +70,22 @@ bool load_data(char *fname, double **matrix) {
 	return true;
 }
 
+// Checks whether 'a' == 'b' taking into account 'FPOINT_OFFSET'
 bool deq(double a, double b) {
     return (a < (b + FPOINT_OFFSET) && a > (b - FPOINT_OFFSET));
 }
 
+// Checks whether 'a' > 'b' taking into account 'FPOINT_OFFSET'
 bool dgt(double a, double b) {
     return a > (b + FPOINT_OFFSET);
 }
 
+// Checks whether 'a' < 'b' taking into account 'FPOINT_OFFSET'
 bool dlt(double a, double b) {
     return a < (b - FPOINT_OFFSET);
 }
 
+// Copies 'source' matrix, 'nrow' by 'ncol',  into 'destination'
 void mtxcpy(double **destination, double **source, size_t nrow,
         size_t ncol) {
     size_t i;
@@ -68,6 +94,7 @@ void mtxcpy(double **destination, double **source, size_t nrow,
     }
 }
 
+// Prints the weights and also checks if they obey the constraints.
 void print_weights() {
 	printf("Weights:\n");
 	size_t j;
@@ -91,6 +118,7 @@ void print_weights() {
 	}
 }
 
+// Randomly initialize the medoids.
 void init_medoids() {
 	size_t i;
     size_t j;
@@ -114,6 +142,7 @@ void init_medoids() {
 	}
 }
 
+// Prints medoids
 void print_medoids() {
     printf("Medoids:\n");
     size_t e;
@@ -131,6 +160,7 @@ void print_medoids() {
     }
 }
 
+// Prints the membership matrix and also performs contraints checks.
 void print_memb() {
 	printf("Membership:\n");
 	size_t i;
@@ -152,6 +182,7 @@ void print_memb() {
 	}
 }
 
+// Updates the memberships.
 void update_memb() {
 	size_t e;
 	size_t h;
@@ -199,6 +230,8 @@ void update_memb() {
 	}
 }
 
+// Computes the adquacy and also stores its value broken down by
+// cluster into 'parc_cluster_adeq'.
 double adequacy_cluster(bool check) {
     size_t e;
     size_t i;
@@ -241,6 +274,8 @@ double adequacy_cluster(bool check) {
     return adeq;
 }
 
+// Computes the adquacy and also stores its value broken down by
+// object into 'parc_obj_adeq'.
 double adequacy_obj(bool check) {
     size_t e;
     size_t i;
@@ -283,17 +318,21 @@ double adequacy_obj(bool check) {
     return adeq;
 }
 
+// Tuple that holds the object number and its computed value in
+// 'update_medoids'.
 typedef struct objnval {
 	size_t obj;
 	double val;
 } objnval;
 
+// Comparator for 'objnval'.
 static int objnval_cmp(const void *p1, const void *p2) {
 	const objnval *a = (const objnval *) p1;
 	const objnval *b = (const objnval *) p2;
 	return (a->val > b->val) - (a->val < b->val);
 }
 
+// Updates the medoids.
 void update_medoids() {
 	size_t h;
 	size_t i;
@@ -317,6 +356,7 @@ void update_medoids() {
 	}
 }
 
+// Updates the weights.
 void update_weights() {
 	size_t e;
 	size_t i;
@@ -362,6 +402,9 @@ void update_weights() {
 	}
 }
 
+// Model main function; this is executed 'insts' times and performs
+// the algorithm up to 'max_iter' iterations. The stopping criteria
+// is whether ('adeq' - 'prev_adeq') > 'epsilon'.
 double run() {
 	size_t i;
 	size_t j;
@@ -412,6 +455,8 @@ double run() {
     return adeq;
 }
 
+// Dumps the membership matrix, weights and adequacy into a file that
+// can be loaded into R.
 bool dump_r_data(const char *filename, double **memb,
         double **weights, double best_adeq) {
     FILE *outfile = fopen(filename, "w");
@@ -470,6 +515,7 @@ int main(int argc, char **argv) {
 	mfuz = 2;
 	int insts = 10;
     char *rfilename = NULL;
+    // Option handling.
     for(; argpos < argc; ++argpos) {
         if(!strcmp(argv[argpos], "-k")) {
             val = atoi(argv[++argpos]);
@@ -594,11 +640,15 @@ int main(int argc, char **argv) {
     size_t best_inst;
     double best_inst_adeq;
     double cur_inst_adeq;
+    // Set a random seed.
 	srand(time(NULL));
+    // Main loop, executes 'run' for 'insts' times.
 	for(i = 1; i <= insts; ++i) {
 		printf("Instance %u:\n", i);
 		cur_inst_adeq = run();
         if(i == 1 || cur_inst_adeq < best_inst_adeq) {
+            // Saving the best configuration, based on adequacy, so
+            // far.
             mtxcpy(best_memb, memb, objc, clustc);
             mtxcpy(best_weights, weights, clustc, dmatrixc);
             best_inst_adeq = cur_inst_adeq;
@@ -607,11 +657,14 @@ int main(int argc, char **argv) {
 	}
     printf("Best adequacy %.15lf on instance %d.\n",
             best_inst_adeq, best_inst);
+    // Dumps the best configuration into a file that can be loaded
+    // into R.
     if(rfilename && !dump_r_data(rfilename, best_memb, best_weights,
                 best_inst_adeq)) {
         printf("Warn: could not dump R data into %s.\n", rfilename);
     }
 END:
+    // Freeing memory.
 	for(i = 0; i < dmatrixc; ++i) {
 		for(j = 0; j < objc; ++j) {
 			free(dmatrix[i][j]);
