@@ -1,3 +1,10 @@
+==PREPARATION==
+    Before running the 'mvfcmv' program, make sure to generate the
+dissimilarity matrices by using 'gen_diss_mtx.R' located under the
+'R' directory of this project. Once you have done this, compile 
+'mvfcmv' and execute 'run.sh'.
+
+==mvfcm HELP==
 mvfcm [OPTIONS] nobjs nmtxs [FILE...]
 
 OPTIONS:
