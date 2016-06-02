@@ -4,11 +4,14 @@ EXEDIR=.
 
 all: $(EXEDIR)/mvfcmv
 
-$(EXEDIR)/mvfcmv: mvfcmv.o
-	$(CC) mvfcmv.o -o $@ -lm
+$(EXEDIR)/mvfcmv: util.o mvfcmv.o
+	$(CC) util.o mvfcmv.o -o $@ -lm
 
 mvfcmv.o: mvfcmv.c
 	$(CC) $(CFLAGS) mvfcmv.c
+
+util.o: util.c
+	$(CC) $(CFLAGS) util.c
 
 clean:
 	rm -rf *o $(EXEDIR)/mvfcmv

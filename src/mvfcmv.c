@@ -1,8 +1,9 @@
-// Federal University of Pernambuco
-// Informatics Centre - 2016-04-19
-// Authors:
-//  Branco, D. P. P. - dppb@cin.ufpe.br
-//  Morai, R. F. A. B. - rfabm@cin.ufpe.br
+// TODO:
+//  - Comment code;
+//  - Rand index calculation:
+//      - Turn fuzzy memb into crisp;
+//      - Build confusion matrix;
+//      - Compute rand index.
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -10,91 +11,28 @@
 #include <math.h>
 #include <string.h>
 
-// Error margin for float point comparison
-#define FPOINT_OFFSET 1e-7
+#include "util.h"
 
-// Maximum number of iterations
+#define BUFF_SIZE 1024
+
+bool verbose;
 size_t max_iter;
-// Number of objects
 int objc;
-// Number of clusters
 size_t clustc;
-// Parameter m
 double mfuz;
-// 1.0 / (m - 1.0)
 double mfuzval;
-// Dissimilarity matrices
 double ***dmatrix;
-// Number of dissimilarity matrices
 int dmatrixc;
-// Medoids
 size_t ***medoids;
-// Cardinality of medoids
 size_t medoids_card;
-// Matrices wieghts
 double **weights;
-// Membership matrix
 double **memb;
-// Epsilon value
 double epsilon;
-// Theta value
 double theta;
-// Adequacy broken down for each object
 double *parc_obj_adeq;
-// Adequacy broken down for each cluster
 double *parc_cluster_adeq;
-// Previous adequacy value
 double prev_adeq;
 
-// Attemps to open a file named by 'fname' and loads the matrix into
-// 'matrix'.
-// Return:
-//  'true' if the data was succesfully loaded into 'matrix', 'false'
-//  otherwise.
-bool load_data(char *fname, double **matrix) {
-	FILE *ifile = fopen(fname, "r");
-	if(!ifile) {
-		return false;
-	}
-	size_t i;
-	size_t j;
-	for(i = 0; i < objc; ++i) {
-		for(j = 0; j < objc; ++j) {
-			if(fscanf(ifile, "%lf", &matrix[i][j]) == EOF) {
-				fclose(ifile);
-				return false;
-			}
-		}
-	}
-	fclose(ifile);
-	return true;
-}
-
-// Checks whether 'a' == 'b' taking into account 'FPOINT_OFFSET'
-bool deq(double a, double b) {
-    return (a < (b + FPOINT_OFFSET) && a > (b - FPOINT_OFFSET));
-}
-
-// Checks whether 'a' > 'b' taking into account 'FPOINT_OFFSET'
-bool dgt(double a, double b) {
-    return a > (b + FPOINT_OFFSET);
-}
-
-// Checks whether 'a' < 'b' taking into account 'FPOINT_OFFSET'
-bool dlt(double a, double b) {
-    return a < (b - FPOINT_OFFSET);
-}
-
-// Copies 'source' matrix, 'nrow' by 'ncol',  into 'destination'
-void mtxcpy(double **destination, double **source, size_t nrow,
-        size_t ncol) {
-    size_t i;
-    for(i = 0; i < nrow; ++i) {
-        memcpy(destination[i], source[i], sizeof(double) * ncol);
-    }
-}
-
-// Prints the weights and also checks if they obey the constraints.
 void print_weights() {
 	printf("Weights:\n");
 	size_t j;
@@ -118,7 +56,6 @@ void print_weights() {
 	}
 }
 
-// Randomly initialize the medoids.
 void init_medoids() {
 	size_t i;
     size_t j;
@@ -142,7 +79,6 @@ void init_medoids() {
 	}
 }
 
-// Prints medoids
 void print_medoids() {
     printf("Medoids:\n");
     size_t e;
@@ -160,7 +96,6 @@ void print_medoids() {
     }
 }
 
-// Prints the membership matrix and also performs contraints checks.
 void print_memb() {
 	printf("Membership:\n");
 	size_t i;
@@ -182,7 +117,6 @@ void print_memb() {
 	}
 }
 
-// Updates the memberships.
 void update_memb() {
 	size_t e;
 	size_t h;
@@ -230,8 +164,6 @@ void update_memb() {
 	}
 }
 
-// Computes the adquacy and also stores its value broken down by
-// cluster into 'parc_cluster_adeq'.
 double adequacy_cluster(bool check) {
     size_t e;
     size_t i;
@@ -274,8 +206,6 @@ double adequacy_cluster(bool check) {
     return adeq;
 }
 
-// Computes the adquacy and also stores its value broken down by
-// object into 'parc_obj_adeq'.
 double adequacy_obj(bool check) {
     size_t e;
     size_t i;
@@ -318,21 +248,17 @@ double adequacy_obj(bool check) {
     return adeq;
 }
 
-// Tuple that holds the object number and its computed value in
-// 'update_medoids'.
 typedef struct objnval {
 	size_t obj;
 	double val;
 } objnval;
 
-// Comparator for 'objnval'.
 static int objnval_cmp(const void *p1, const void *p2) {
 	const objnval *a = (const objnval *) p1;
 	const objnval *b = (const objnval *) p2;
 	return (a->val > b->val) - (a->val < b->val);
 }
 
-// Updates the medoids.
 void update_medoids() {
 	size_t h;
 	size_t i;
@@ -356,7 +282,6 @@ void update_medoids() {
 	}
 }
 
-// Updates the weights.
 void update_weights() {
 	size_t e;
 	size_t i;
@@ -402,25 +327,22 @@ void update_weights() {
 	}
 }
 
-// Model main function; this is executed 'insts' times and performs
-// the algorithm up to 'max_iter' iterations. The stopping criteria
-// is whether ('adeq' - 'prev_adeq') > 'epsilon'.
 double run() {
 	size_t i;
 	size_t j;
 	size_t k;
 	printf("Initialization.\n");
 	init_medoids();
-    print_medoids();
+    if(verbose) print_medoids();
 	for(k = 0; k < clustc; ++k) {
 		for(j = 0; j < dmatrixc; ++j) {
 			weights[k][j] = 1.0;
 		}
 	}
-	print_weights();
+	if(verbose) print_weights();
 	update_memb();
     //memb_adequacy(false);
-	print_memb();
+	if(verbose) print_memb();
 	double prev_adeq = 0.0;
 	double adeq = adequacy_obj(false);
 	printf("Adequacy: %.20lf\n", adeq);
@@ -431,17 +353,21 @@ double run() {
 		adequacy_cluster(false);
         update_medoids();
 		adeq = adequacy_cluster(true);
-        print_medoids();
-        printf("Adequacy1: %.20lf\n", adeq);
+        if(verbose) {
+            print_medoids();
+            printf("Adequacy1: %.20lf\n", adeq);
+        }
 		adequacy_cluster(false);
         update_weights();
 		adeq = adequacy_cluster(true);
-        print_weights();
-        printf("Adequacy2: %.20lf\n", adeq);
+        if(verbose) {
+            print_weights();
+            printf("Adequacy2: %.20lf\n", adeq);
+        }
 		adequacy_obj(false);
         update_memb();
 		adeq = adequacy_obj(true);
-        print_memb();
+        if(verbose) print_memb();
         printf("Adequacy: %.20lf\n", adeq);
         if(dgt(adeq, prev_adeq)) {
             printf("Warn: current adequacy is greater than "
@@ -455,140 +381,263 @@ double run() {
     return adeq;
 }
 
-// Dumps the membership matrix, weights and adequacy into a file that
-// can be loaded into R.
-bool dump_r_data(const char *filename, double **memb,
-        double **weights, double best_adeq) {
-    FILE *outfile = fopen(filename, "w");
-    if(!outfile) {
-        return false;
-    }
+// lenergy - J value, calculated using the medoids used by the
+// algorithm
+// genergy - T value, calculated using the global medoids computed
+// in this function
+void global_energy() {
+    size_t e;
+    size_t h;
     size_t i;
     size_t j;
     size_t k;
-    fprintf(outfile, "mvfcmv_model <- list(\n");
-    // membership matrix start
-    fprintf(outfile, "fuzzyMatrix = matrix(c(\n");
-    size_t last = objc - 1;
-    for(i = 0; i < last; ++i) {
-        fprintf(outfile, "\t");
-        for(k = 0; k < clustc; ++k) {
-            fprintf(outfile, "%.10lf,", memb[i][k]);
+    // Defining global medoids
+    objnval candidates[objc];    
+    size_t global_medoids[dmatrixc][medoids_card];
+    for(j = 0; j < dmatrixc; ++j) {
+        for(h = 0; h < objc; ++h) {
+            candidates[h].obj = h;
+            candidates[h].val = 0.0;
+            for(k = 0; k < clustc; ++k) {
+                for(i = 0; i < objc; ++i) {
+                    candidates[h].val += pow(memb[i][k], mfuz) *
+                        weights[k][j] * dmatrix[j][i][h];
+                }
+            }
         }
-        fprintf(outfile, "\n");
+        qsort(candidates, objc, sizeof(objnval), objnval_cmp);
+        for(h = 0; h < medoids_card; ++h) {
+            global_medoids[j][h] = candidates[h].obj;
+        }
     }
-    fprintf(outfile, "\t");
-    last = clustc - 1;
-    for(k = 0; k < last; ++k) {
-        fprintf(outfile, "%.10lf,", memb[i][k]);
+    printf("Global medoids:\n");
+    for(j = 0; j < dmatrixc; ++j) {
+        printf("%d:", j + 1);
+        for(e = 0; e < medoids_card; ++e) {
+            printf(" %d", global_medoids[j][e]);
+        }
+        printf("\n");
     }
-    fprintf(outfile, "%.10lf\n),%d,%d),\n", memb[i][k], objc, clustc);
-    // weight matrix start
-    fprintf(outfile, "weightMatrix = matrix(c(\n");
-    for(k = 0; k < last; ++k) {
-        fprintf(outfile, "\t");
+    printf("\n");
+    // Global energy per cluster and matrix
+    double genergy[clustc][dmatrixc];
+    double lenergy[clustc][dmatrixc];
+    double sumd_global;
+    double sumd_local;
+    double val;
+    double mtx_genergy[dmatrixc];
+    double mtx_lenergy[dmatrixc];
+    for(j = 0; j < dmatrixc; ++j) {
+        mtx_genergy[j] = 0.0;
+        mtx_lenergy[j] = 0.0;
+    }
+    double clust_genergy[clustc];
+    double clust_lenergy[clustc];
+    for(k = 0; k < clustc; ++k) {
+        clust_genergy[k] = 0.0;
+        clust_lenergy[k] = 0.0;
+    }
+    double total_genergy = 0.0;
+    double total_lenergy = 0.0;
+    for(k = 0; k < clustc; ++k) {
         for(j = 0; j < dmatrixc; ++j) {
-            fprintf(outfile, "%.10lf,", weights[k][j]);
+            genergy[k][j] = 0.0;
+            lenergy[k][j] = 0.0;
+            for(i = 0; i < objc; ++i) {
+                sumd_global = 0.0;
+                sumd_local = 0.0;
+                for(e = 0; e < medoids_card; ++e) {
+                    sumd_global +=
+                        dmatrix[j][i][global_medoids[j][e]];
+                    sumd_local += dmatrix[j][i][medoids[k][j][e]];
+                }
+                val = pow(memb[i][k], mfuz) * weights[k][j];
+                genergy[k][j] += val * sumd_global;
+                lenergy[k][j] += val * sumd_local;
+            }
+            clust_genergy[k] += genergy[k][j];
+            clust_lenergy[k] += lenergy[k][j];
+            mtx_genergy[j] += genergy[k][j];
+            mtx_lenergy[j] += lenergy[k][j];
+            total_genergy += genergy[k][j];
+            total_lenergy += lenergy[k][j];
         }
-        fprintf(outfile, "\n");
     }
-    fprintf(outfile, "\t");
-    last = dmatrixc - 1;
-    for(j = 0; j < last; ++j) {
-        fprintf(outfile, "%.10lf,", weights[k][j]);
+    printf("Global energy matrix:\n");
+    for(k = 0; k < clustc; ++k) {
+        for(j = 0; j < dmatrixc; ++j) {
+            printf("%lf ", genergy[k][j]);
+        }
+        printf("\n");
     }
-    fprintf(outfile, "%.10lf\n),%d,%d),\n", weights[k][j], clustc,
-            dmatrixc);
-    // adequacy start
-    fprintf(outfile, "adequacy = %.10lf)", best_adeq);
-    return true;
+    printf("Local energy matrix:\n");
+    for(k = 0; k < clustc; ++k) {
+        for(j = 0; j < dmatrixc; ++j) {
+            printf("%lf ", lenergy[k][j]);
+        }
+        printf("\n");
+    }
+    for(k = 0; k < clustc; ++k) {
+        for(j = 0; j < dmatrixc; ++j) {
+            if(dgt(lenergy[k][j], genergy[k][j])) {
+                printf("Msg: lenergy > genergy for cluster %d and matrix %d.\n", k, j);
+            }
+        }
+    }
+    printf("\n");
+    double sum = 0.0;
+    printf("Cluster global energy:\n");
+    for(k = 0; k < clustc; ++k) {
+        sum += clust_genergy[k];
+        printf("%lf ", clust_genergy[k]);
+    }
+    printf("[%lf]\n", sum);
+    sum = 0.0;
+    printf("Cluster local energy:\n");
+    for(k = 0; k < clustc; ++k) {
+        sum += clust_lenergy[k];
+        printf("%lf ", clust_lenergy[k]);
+    }
+    printf("[%lf]\n", sum);
+    for(k = 0; k < clustc; ++k) {
+        if(dgt(clust_lenergy[k], clust_genergy[k])) {
+            printf("Warn: clust_lenergy > clust_genergy for cluster %d.\n", k);
+        }
+    }
+    printf("\n");
+    sum = 0.0;
+    printf("Matrix global energy:\n");
+    for(j = 0; j < dmatrixc; ++j) {
+        sum += mtx_genergy[j];
+        printf("%lf ", mtx_genergy[j]);
+    }
+    printf("[%lf]\n", sum);
+    sum = 0.0;
+    printf("Matrix local energy:\n");
+    for(j = 0; j < dmatrixc; ++j) {
+        sum += mtx_lenergy[j];
+        printf("%lf ", mtx_lenergy[j]);
+    }
+    printf("[%lf]\n", sum);
+    for(j = 0; j < dmatrixc; ++j) {
+        if(dgt(mtx_lenergy[j], mtx_genergy[j])) {
+            printf("Warn: mtx_lenergy > mtx_genergy for matrix %d.\n", j);
+        }
+    }
+    printf("\n");
+    printf("Global energy: %lf\n", total_genergy);
+    printf("Local energy: %lf\n", total_lenergy);
+    if(dgt(total_lenergy, total_genergy)) {
+        printf("Warn: total_lenergy > total_genergy.\n");
+    }
+    printf("\n");
+    printf("Matrix global heterogeneity index:\n");
+    for(j = 0; j < dmatrixc; ++j) {
+        printf("%lf ", (1.0 - (mtx_lenergy[j] / mtx_genergy[j])));
+    }
+    printf("\n");
+    printf("\n");
+    printf("Global heterogeneity index: %lf\n",
+            (1.0 - (total_lenergy / total_genergy)));
+    printf("\n");
+    printf("Cluster heterogeinety indexes:\n");
+    printf("T:\n");
+    for(k = 0; k < clustc; ++k) {
+        printf("%lf ", clust_genergy[k] / total_genergy);
+    }
+    printf("\n");
+    printf("J:\n");
+    for(k = 0; k < clustc; ++k) {
+        printf("%lf ", clust_lenergy[k] / total_lenergy);
+    }
+    printf("\n");
+    printf("B:\n");
+    for(k = 0; k < clustc; ++k) {
+        printf("%lf ", (clust_genergy[k] - clust_lenergy[k]) /
+                    (total_genergy - total_lenergy));
+    }
+    printf("\n");
+    printf("Q:\n");
+    for(k = 0; k < clustc; ++k) {
+        printf("%lf ", (1.0 - (clust_lenergy[k] / clust_genergy[k])));
+    }
+    printf("\n");
+    printf("\n");
+    printf("Cluster heterogeinety indexes for matrices:\n");
+    for(k = 0; k < clustc; ++k) {
+        for(j = 0; j < dmatrixc; ++j) {
+            printf("%lf ", (1.0 - (lenergy[k][j] / genergy[k][j])));
+        }
+        printf("\n");
+    }
 }
 
 int main(int argc, char **argv) {
-	size_t argpos = 1;
-    int val;
-	clustc = 3;
-	medoids_card = 3;
-	max_iter = 100;
-	epsilon = 1e-6;
-	theta = 0.02;
-	mfuz = 2;
-	int insts = 10;
-    char *rfilename = NULL;
-    // Option handling.
-    for(; argpos < argc; ++argpos) {
-        if(!strcmp(argv[argpos], "-k")) {
-            val = atoi(argv[++argpos]);
-            if(val <= 0) {
-                printf("Error: k <= 0.\n");
-                return 1;
-            }
-            clustc = val;
-        } else if(!strcmp(argv[argpos], "-q")) {
-            val = atoi(argv[++argpos]);
-            if(val <= 0) {
-                printf("Error: q <= 0.\n");
-                return 1;
-            }
-            medoids_card = val;
-        } else if(!strcmp(argv[argpos], "-T")) {
-            val = atoi(argv[++argpos]);
-            if(val <= 0) {
-                printf("Error: T <= 0.\n");
-                return 1;
-            }
-            max_iter = val;
-        } else if(!strcmp(argv[argpos], "-e")) {
-            epsilon = atof(argv[++argpos]);
-            if(epsilon < 0) {
-                printf("Error: e <= 0.\n");
-                return 1;
-            }
-        } else if(!strcmp(argv[argpos], "-t")) {
-            theta = atof(argv[++argpos]);
-            if(theta < 0) {
-                printf("Error: t <= 0.\n");
-                return 1;
-            }
-        } else if(!strcmp(argv[argpos], "-m")) {
-            val = atoi(argv[++argpos]);
-            if(val <= 0) {
-                printf("Error: m <= 0.\n");
-                return 1;
-            }
-            mfuz = val;
-        } else if(!strcmp(argv[argpos], "-i")) {
-            val = atoi(argv[++argpos]);
-            if(val <= 0) {
-                printf("Error: i <= 0.\n");
-                return 1;
-            }
-            insts = val;
-        } else if(!strcmp(argv[argpos], "--Rfile")) {
-            rfilename = argv[++argpos];
-        } else {
-            break;
-        }
-    }
-    if((argc - argpos) < 2) {
-        printf("Error: not enough args.\n");
+	verbose = false;
+	int insts;
+    FILE *cfgfile = fopen(argv[1], "r");
+    if(!cfgfile) {
+        printf("Error: could not open config file.\n");
         return 1;
     }
+    fscanf(cfgfile, "%d", &objc);
+    if(objc <= 0) {
+        printf("Error: objc <= 0.\n");
+        return 2;
+    }
+    // ignore labels
+    fscanf(cfgfile, "%*d");
+	size_t i;
+    for(i = 0; i < objc; ++i) {
+        fscanf(cfgfile, "%*d");
+    }
+    // ignore labels end
+    fscanf(cfgfile, "%d", &dmatrixc);
+    if(dmatrixc <= 0) {
+        printf("Error: dmatrixc <= 0.\n");
+        return 2;
+    }
+    char dmtx_file_name[dmatrixc][BUFF_SIZE];
+	size_t j;
+    for(j = 0; j < dmatrixc; ++j) {
+        fscanf(cfgfile, "%s", dmtx_file_name[j]);
+    }
+    char out_file_name[BUFF_SIZE];
+    fscanf(cfgfile, "%s", out_file_name);
+    fscanf(cfgfile, "%d", &clustc);
+    if(clustc <= 0) {
+        printf("Error: clustc <= 0.\n");
+        return 2;
+    }
+    fscanf(cfgfile, "%d", &medoids_card);
+    if(medoids_card <= 0) {
+        printf("Error: medoids_card <= 0.\n");
+        return 2;
+    }
+    fscanf(cfgfile, "%d", &insts);
+    if(insts <= 0) {
+        printf("Error: insts <= 0.\n");
+        return 2;
+    }
+    fscanf(cfgfile, "%lf", &theta);
+    if(dlt(theta, 0.0)) {
+        printf("Error: theta < 0.\n");
+        return 2;
+    }
+    fscanf(cfgfile, "%d", &max_iter);
+    fscanf(cfgfile, "%lf", &epsilon);
+    if(dlt(epsilon, 0.0)) {
+        printf("Error: epsilon < 0.\n");
+        return 2;
+    }
+    fscanf(cfgfile, "%lf", &mfuz);
+    if(!dgt(mfuz, 0.0)) {
+        printf("Error: mfuz <= 0.\n");
+        return 2;
+    }
+    fclose(cfgfile);
+    freopen(out_file_name, "w", stdout);
 	mfuzval = 1.0 / (mfuz - 1.0);
-	objc = atoi(argv[argpos++]);
-	if(objc <= 0) {
-		printf("Error: objc <= 0.\n");
-		return 1;
-	}
-	dmatrixc = atoi(argv[argpos++]);
-	if(dmatrixc <= 0) {
-		printf("Error: dmatrixc <= 0.\n");
-		return 1;
-	}
-    if((argc - argpos) < dmatrixc) {
-        printf("Error: not enough args.\n");
-        return 1;
-    }
     printf("######Config summary:######\n");
     printf("Number of clusters: %d.\n", clustc);
     printf("Medoids cardinality: %d.\n", medoids_card);
@@ -598,8 +647,6 @@ int main(int argc, char **argv) {
     printf("Parameter m: %.15lf.\n", mfuz);
     printf("Number of instances: %d.\n", insts);
     printf("###########################\n");
-	size_t i;
-	size_t j;
 	size_t k;
 	// Allocating memory start
 	parc_cluster_adeq = malloc(sizeof(double) * clustc);
@@ -612,10 +659,13 @@ int main(int argc, char **argv) {
 		}
 	}
 	medoids = malloc(sizeof(size_t **) * clustc);
+	size_t ***best_medoids = malloc(sizeof(size_t **) * clustc);
 	for(k = 0; k < clustc; ++k) {
 		medoids[k] = malloc(sizeof(size_t *) * dmatrixc);
+		best_medoids[k] = malloc(sizeof(size_t *) * dmatrixc);
         for(j = 0; j < dmatrixc; ++j) {
             medoids[k][j] = malloc(sizeof(size_t) * medoids_card);
+            best_medoids[k][j] = malloc(sizeof(size_t) * medoids_card);
         }
 	}
 	weights = malloc(sizeof(double *) * clustc);
@@ -625,46 +675,58 @@ int main(int argc, char **argv) {
 		best_weights[k] = malloc(sizeof(double) * dmatrixc);
 	}
 	memb = malloc(sizeof(double *) * objc);
-    double **best_memb = malloc(sizeof(double *) * objc);
+	double **best_memb = malloc(sizeof(double *) * objc);
 	for(i = 0; i < objc; ++i) {
 		memb[i] = malloc(sizeof(double) * clustc);
-        best_memb[i] = malloc(sizeof(double) * clustc);
+		best_memb[i] = malloc(sizeof(double) * clustc);
 	}
 	// Allocating memory end
-	for(j = 0; j < dmatrixc; ++j, ++argpos) {
-		if(!load_data(argv[argpos], dmatrix[j])) {
-			printf("Error: could not load %s.\n", argv[argpos]);
+	for(j = 0; j < dmatrixc; ++j) {
+		if(!load_data(dmtx_file_name[j], dmatrix[j], objc, objc)) {
+			printf("Error: could not load %s.\n", dmtx_file_name[j]);
 			goto END;
 		}
 	}
     size_t best_inst;
     double best_inst_adeq;
     double cur_inst_adeq;
-    // Set a random seed.
 	srand(time(NULL));
-    // Main loop, executes 'run' for 'insts' times.
 	for(i = 1; i <= insts; ++i) {
 		printf("Instance %u:\n", i);
 		cur_inst_adeq = run();
         if(i == 1 || cur_inst_adeq < best_inst_adeq) {
-            // Saving the best configuration, based on adequacy, so
-            // far.
-            mtxcpy(best_memb, memb, objc, clustc);
-            mtxcpy(best_weights, weights, clustc, dmatrixc);
+            mtxcpy_d(best_memb, memb, objc, clustc);
+            mtxcpy_d(best_weights, weights, clustc, dmatrixc);
+            for(k = 0; k < clustc; ++k) {
+                mtxcpy_size_t(best_medoids[k], medoids[k], dmatrixc,
+                        medoids_card);
+            }
             best_inst_adeq = cur_inst_adeq;
             best_inst = i;
         }
 	}
+	printf("\n");
     printf("Best adequacy %.15lf on instance %d.\n",
             best_inst_adeq, best_inst);
-    // Dumps the best configuration into a file that can be loaded
-    // into R.
-    if(rfilename && !dump_r_data(rfilename, best_memb, best_weights,
-                best_inst_adeq)) {
-        printf("Warn: could not dump R data into %s.\n", rfilename);
-    }
+    printf("\n");
+    size_t ***swp2 = medoids;
+    medoids = best_medoids;
+    best_medoids = swp2;
+    print_medoids();
+    printf("\n");
+    double **swp = memb;
+	memb = best_memb;
+	best_memb = swp;
+	print_memb();
+	printf("\n");
+	swp = weights;
+	weights = best_weights;
+	best_weights = swp;
+	print_weights();
+	printf("\n");
+    global_energy();
 END:
-    // Freeing memory.
+    fclose(stdout);
 	for(i = 0; i < dmatrixc; ++i) {
 		for(j = 0; j < objc; ++j) {
 			free(dmatrix[i][j]);
@@ -675,12 +737,15 @@ END:
 	for(k = 0; k < clustc; ++k) {
         for(j = 0; j < dmatrixc; ++j) {
             free(medoids[k][j]);
+            free(best_medoids[k][j]);
         }
 		free(medoids[k]);
+		free(best_medoids[k]);
 		free(weights[k]);
 		free(best_weights[k]);
 	}
 	free(medoids);
+	free(best_medoids);
 	free(weights);
 	free(best_weights);
 	for(i = 0; i < objc; ++i) {
