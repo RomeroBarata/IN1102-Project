@@ -2,22 +2,13 @@
     Before running the 'mvfcmv' program, make sure to generate the
 dissimilarity matrices by using 'gen_diss_mtx.R' located under the
 'R' directory of this project. Once you have done this, compile 
-'mvfcmv' and execute 'run.sh'.
+'mvfcmv' and execute the program passing 'mfeat.par' as parameter.
+
+    On windows, it is possible to drag and drop 'mfeat.par' into the
+'mvfcmv.exe' in order to run the program without the need of a CLI.
 
 ==mvfcm HELP==
-mvfcm [OPTIONS] nobjs nmtxs [FILE...]
-
-OPTIONS:
-    -k  number of clusters, default is 3
-    -q  cardinality of medoids, default is 3 (for this project, set it to 1)
-    -T  maximum number of iterations for convergence
-    -e  epsilon parameter, default is 1e-6
-    -t  theta parameter, default is 2e-2
-    -m  m parameter, default is 2
-    -i  number of instances of the model (i.e. number of repertitions)
---Rfile name of the R file to dump the data from the best instance
+mvfcm FILE
 
 PARAMETERS:
-    nobjs   number of objects
-    nmtxs   number of matrices
-[FILE...]   'nmtx' filenames
+    FILE    configuration file to be read from. See the 'template.par' file for more information on its format.
