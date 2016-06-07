@@ -12,24 +12,42 @@
 
 #define BUFF_SIZE 1024
 
+// Set this to make the program give more output.
 bool verbose;
+// Maximum number of iteration for a given instance.
 size_t max_iter;
+// Number of objects.
 int objc;
+// Number of clusters.
 size_t clustc;
+// Parameter 'm' of the algorithm.
 double mfuz;
+// mfuzval = 1.0 / (1.0 - 'mfuz')
 double mfuzval;
-double ***dmatrix;
+// Number of dissimilarity matrices.
 int dmatrixc;
-size_t ***medoids;
+// 'dmatrixc' dissimilarity matrices.
+double ***dmatrix;
+// Cardinality of medoids.
 size_t medoids_card;
+// Medoids for each cluster for each dissimilarity matrix.
+size_t ***medoids;
+// Relevance weights for each cluster for each dissimilarity matrix.
 double **weights;
+// Membership matrix for each object.
 double **memb;
+// Parameter 'epsilon' of the algortihm. Stopping criteria.
 double epsilon;
+// Parameter 'theta' of the algorithm.
 double theta;
+// Adequacy broken down by each object.
 double *parc_obj_adeq;
+// Adequacy broken down by each cluster.
 double *parc_cluster_adeq;
+// Previous computed adequacy.
 double prev_adeq;
 
+// Prints and checks 'weights'.
 void print_weights(double **weights) {
 	printf("Weights:\n");
 	size_t j;
@@ -53,6 +71,7 @@ void print_weights(double **weights) {
 	}
 }
 
+// Randomly initialize 'medoids'.
 void init_medoids() {
 	size_t i;
     size_t j;
@@ -76,6 +95,7 @@ void init_medoids() {
 	}
 }
 
+// Prints and checks 'medoids'.
 void print_medoids(size_t ***medoids) {
     printf("Medoids:\n");
     size_t e;
@@ -93,6 +113,7 @@ void print_medoids(size_t ***medoids) {
     }
 }
 
+// Prints and checks 'memb'.
 void print_memb(double **memb) {
 	printf("Membership:\n");
 	size_t i;
@@ -114,6 +135,7 @@ void print_memb(double **memb) {
 	}
 }
 
+// Updates 'memb'.
 void update_memb() {
 	size_t e;
 	size_t h;
@@ -161,6 +183,8 @@ void update_memb() {
 	}
 }
 
+// Computes the adequacy and stores the contribution of each cluster
+// into 'parc_cluster_adeq'.
 double adequacy_cluster(bool check) {
     size_t e;
     size_t i;
@@ -203,6 +227,8 @@ double adequacy_cluster(bool check) {
     return adeq;
 }
 
+// Computes the adequacy and stores the contribution of each object 
+// into 'parc_obj_adeq'.
 double adequacy_obj(bool check) {
     size_t e;
     size_t i;
@@ -245,17 +271,22 @@ double adequacy_obj(bool check) {
     return adeq;
 }
 
+// Structure used in 'update_medoids' to store the object and its
+// computed value.
 typedef struct objnval {
 	size_t obj;
 	double val;
 } objnval;
 
+// Comparator for 'objnval', used in the sort function by
+// 'update_medoids'.
 static int objnval_cmp(const void *p1, const void *p2) {
 	const objnval *a = (const objnval *) p1;
 	const objnval *b = (const objnval *) p2;
 	return (a->val > b->val) - (a->val < b->val);
 }
 
+// Updates 'medoids' by selecting the best candidates.
 void update_medoids() {
 	size_t h;
 	size_t i;
@@ -279,6 +310,7 @@ void update_medoids() {
 	}
 }
 
+// Updates 'weights'.
 void update_weights() {
 	size_t e;
 	size_t i;
@@ -324,6 +356,7 @@ void update_weights() {
 	}
 }
 
+// Main loop for an instance of the algorithm.
 double run() {
 	size_t i;
 	size_t j;
@@ -378,6 +411,7 @@ double run() {
     return adeq;
 }
 
+// Computes and prints the global energy.
 // lenergy - J value, calculated using the medoids used by the
 // algorithm
 // genergy - T value, calculated using the global medoids computed
@@ -572,6 +606,7 @@ void global_energy() {
 int main(int argc, char **argv) {
 	verbose = false;
 	int insts;
+    // Opening and reading config file.
     FILE *cfgfile = fopen(argv[1], "r");
     if(!cfgfile) {
         printf("Error: could not open config file.\n");
@@ -634,6 +669,7 @@ int main(int argc, char **argv) {
         return 2;
     }
     fclose(cfgfile);
+    // Done reading config file.
     freopen(out_file_name, "w", stdout);
 	mfuzval = 1.0 / (mfuz - 1.0);
     printf("######Config summary:######\n");
@@ -688,11 +724,13 @@ int main(int argc, char **argv) {
     size_t best_inst;
     double best_inst_adeq;
     double cur_inst_adeq;
-	srand(time(NULL));
+	srand(time(NULL)); // Random seed.
+    // Start main program loop.
 	for(i = 1; i <= insts; ++i) {
 		printf("Instance %u:\n", i);
 		cur_inst_adeq = run();
         if(i == 1 || cur_inst_adeq < best_inst_adeq) {
+            // Saves the best configuration based on the adequacy.
             mtxcpy_d(best_memb, memb, objc, clustc);
             mtxcpy_d(best_weights, weights, clustc, dmatrixc);
             for(k = 0; k < clustc; ++k) {
@@ -703,6 +741,7 @@ int main(int argc, char **argv) {
             best_inst = i;
         }
 	}
+    // Print the best configuration and the CR index.
 	printf("\n");
     printf("Best adequacy %.15lf on instance %d.\n",
             best_inst_adeq, best_inst);
@@ -719,6 +758,7 @@ int main(int argc, char **argv) {
     print_groups(pred, objc, clustc);
     printf("Corrected Rand: %.7lf\n", corand(pred, labels, objc));
     free(pred);
+    // Freeing memory.
 END:
     fclose(stdout);
 	for(i = 0; i < dmatrixc; ++i) {
