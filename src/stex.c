@@ -1,6 +1,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "util.h"
+
+// Defuzzifies fuzzy matrix 'fuzmtx' by using the first
+// maxima method.
+// Params:
+//  fuzmtx - an object x class fuzzy matrix.
+// Return:
+//  An array of size 'fuzmtx->nrow' with the crip values for each
+//  object.
 int* defuz(double **fuzmtx, size_t nrow, size_t ncol) {
     size_t i;
     size_t j;
@@ -21,6 +30,38 @@ int* defuz(double **fuzmtx, size_t nrow, size_t ncol) {
     return labels;
 }
 
+// Creates a confusion matrix.
+// Params:
+//  labels - the labels of each object.
+//  pred - the predicted labels of each object.
+//  size - the size of the 'labels' and 'pred' arrays.
+// Return:
+//  A confusion matrix.
+double** confusion(int *labels, int *pred, size_t size) {
+    int classc = max(labels, size) + 2;
+	double **confmtx = malloc(sizeof(double *) * classc);
+    size_t i;
+	for(i = 0; i < classc; ++i) {
+		confmtx[i] = calloc(sizeof(double), classc);
+	}
+    size_t last = classc - 1;
+    for(i = 0; i < size; ++i) {
+        ++(confmtx[labels[i]][pred[i]]);
+        ++(confmtx[pred[i]][labels[i]]);
+        ++(confmtx[labels[i]][last]);
+        ++(confmtx[last][pred[i]]);
+    }
+    confmtx[last][last] = size;
+    return confmtx;
+}
+
+// Computes the corrected Rand index.
+// Params:
+//  labels - the labels of each object.
+//  pred - the predicted labels of each object.
+//  size - the size of the 'labels' and 'pred' arrays.
+// Return:
+//  The corrected Rand index.
 double corand(int *labels, int *pred, size_t size) {
     size_t i;
     size_t j;
@@ -50,6 +91,11 @@ double corand(int *labels, int *pred, size_t size) {
     return ((a + d) - term) / (p - term);
 }
 
+// Prints the objects by group.
+// Params:
+//  labels - the labels of each object.
+//  size - the size of the 'labels' and 'pred' arrays.
+//  card - the number of different groups in 'labels'.
 void print_groups(int *labels, size_t size, size_t card) {
     size_t groups[card][size - 1];
     size_t groupsc[card];

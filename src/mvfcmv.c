@@ -1,5 +1,3 @@
-// TODO:
-//  - Comment code.
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -371,7 +369,6 @@ double run() {
 	}
 	if(verbose) print_weights(weights);
 	update_memb();
-    //memb_adequacy(false);
 	if(verbose) print_memb(memb);
 	double prev_adeq = 0.0;
 	double adeq = adequacy_obj(false);
@@ -619,7 +616,8 @@ int main(int argc, char **argv) {
     }
     int labels[objc];
     // reading labels
-    fscanf(cfgfile, "%*d");
+    int classc;
+    fscanf(cfgfile, "%d", &classc);
 	size_t i;
     for(i = 0; i < objc; ++i) {
         fscanf(cfgfile, "%d", &labels[i]);
@@ -741,7 +739,8 @@ int main(int argc, char **argv) {
             best_inst = i;
         }
 	}
-    // Print the best configuration and the CR index.
+    // Print the best configuration, confusion matrix and the CR
+    // index.
 	printf("\n");
     printf("Best adequacy %.15lf on instance %d.\n",
             best_inst_adeq, best_inst);
@@ -756,6 +755,14 @@ int main(int argc, char **argv) {
     printf("\n");
     int *pred = defuz(memb, objc, clustc);
     print_groups(pred, objc, clustc);
+    double **confmtx = confusion(pred, labels, objc);
+    printf("\nConfusion matrix (class x predicted):\n");
+    print_mtx_d(confmtx, classc, classc, 0);
+    ++classc;
+    for(i = 0; i < classc; ++i) {
+        free(confmtx[i]);
+    }
+    free(confmtx);
     printf("Corrected Rand: %.7lf\n", corand(pred, labels, objc));
     free(pred);
     // Freeing memory.
