@@ -13,6 +13,7 @@ source(file.path(R_PATH, "data_functions.R"))
 source(file.path(R_PATH, "misc_functions.R"))
 source(file.path(R_PATH, "mixture_functions.R"))
 source(file.path(R_PATH, "nn_functions.R"))
+source(file.path(R_PATH, "plot_functions.R"))
 source(file.path(R_PATH, "svm_functions.R"))
 
 # Read the data sets
