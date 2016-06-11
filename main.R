@@ -4,6 +4,7 @@ DATA_PATH <- "data"
 FILES_NAMES <- c("mfeat-fou", "mfeat-kar", "mfeat-zer")
 FOLDS <- 40
 REPEATS <- 1
+SEED <- 1235
 
 # Source files
 source(file.path(R_PATH, "bayes_functions.R"))
@@ -31,7 +32,7 @@ data_sets_list <- cleanDataSets(data_sets_list)
 # Train an ensemble of bayes classifiers
 bayes_ens <- repeatedCVTrain(method = "bayesEnsemble", 
                              data_list = data_sets_list, 
-                             seed = 1235, folds = FOLDS, repeats = REPEATS)
+                             seed = SEED, folds = FOLDS, repeats = REPEATS)
 
 # Question 2(b)
 svms_params <- list(list(C = 32), 
@@ -40,7 +41,7 @@ svms_params <- list(list(C = 32),
 svm_ens <- repeatedCVTrain(method = "svmEnsemble", 
                            data_list = data_sets_list, 
                            method_args = svms_params, 
-                           seed = 1235, folds = FOLDS, repeats = REPEATS)
+                           seed = SEED, folds = FOLDS, repeats = REPEATS)
 
 nns_params <- list(list(size = 12, decay = 5e-2, maxit = 1500), 
                    list(size = 12, decay = 5e-2, maxit = 1500), 
@@ -48,7 +49,7 @@ nns_params <- list(list(size = 12, decay = 5e-2, maxit = 1500),
 nn_ens <- repeatedCVTrain(method = "nnEnsemble", 
                           data_list = data_sets_list, 
                           method_args = nns_params, 
-                          seed = 1235, pre_process = c("center", "scale"), 
+                          seed = SEED, pre_process = c("center", "scale"), 
                           folds = FOLDS, repeats = REPEATS)
 
 # Question 2(c)
@@ -57,7 +58,7 @@ mix_params <- list(svm_ensemble = svms_params,
 mix_ens <- repeatedCVTrain(method = "mixture", 
                            data_list = data_sets_list, 
                            method_args = mix_params, 
-                           seed = 1235, pre_process = c("center", "scale"), 
+                           seed = SEED, pre_process = c("center", "scale"), 
                            folds = FOLDS, repeats = REPEATS)
 
 # Print the results
