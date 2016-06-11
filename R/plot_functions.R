@@ -14,7 +14,8 @@ createDotPlot <- function(results_df){
         scale_x_discrete(limits = c("Bayes", "NN", "Mix", "SVM")) + theme_minimal()
     p + geom_point(size = 2.5) + 
         geom_errorbar(aes(ymin = Acc - Err, ymax = Acc + Err, width = 0.1)) + 
-        ylab("Accuracy") + 
+        xlab("Classificador") + 
+        ylab("Taxa de Acerto") + 
         coord_flip() + 
-        ggtitle("99% Confidence Interval for the Accuracy")
+        ggtitle("Intervalo de Confiança de 99% para a Taxa de Acerto")
 }
