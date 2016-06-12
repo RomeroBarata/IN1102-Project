@@ -16,6 +16,5 @@ createDotPlot <- function(results_df){
         geom_errorbar(aes(ymin = Acc - Err, ymax = Acc + Err, width = 0.1)) + 
         xlab("Classificador") + 
         ylab("Taxa de Acerto") + 
-        coord_flip() + 
-        ggtitle("Intervalo de Confiança de 99% para a Taxa de Acerto")
+        coord_flip()
 }
