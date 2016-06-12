@@ -1,5 +1,7 @@
 library(ggplot2)
 
+# Function to create an appropriate data frame for 
+# the ggplot function of the ggplot2 package.
 buildPlotDataFrame <- function(bayes, svm, nn, mix){
     accuracy_matrix <- cbind(bayes$Accuracy, svm$Accuracy, 
                              nn$Accuracy, mix$Accuracy)
@@ -9,6 +11,7 @@ buildPlotDataFrame <- function(bayes, svm, nn, mix){
                Err = apply(accuracy_matrix, 2, createConfidenceInterval)[1, ])
 }
 
+# Function to create dotplot of the classifiers' results.
 createDotPlot <- function(results_df){
     p <- ggplot(results_df, aes(x = Classifier, y = Acc)) + 
         scale_x_discrete(limits = c("Bayes", "NN", "Mix", "SVM")) + theme_minimal()

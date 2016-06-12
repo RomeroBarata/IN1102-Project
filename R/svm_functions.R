@@ -1,5 +1,6 @@
 library(kernlab)
 
+# Function to train an ensemble of SVMs.
 svmEnsemble <- function(data_sets_list, 
                         params_list = list(list(C = 1)), 
                         pre_process = c("center", "scale")){
@@ -16,6 +17,7 @@ svmEnsemble <- function(data_sets_list,
     svm_ens
 }
 
+# Generic predict function for the ensemble of svms.
 predict.svm_ensemble <- function(object, newdata, ...){
     # object: A list of svms
     # newdata: A list of data sets to predict

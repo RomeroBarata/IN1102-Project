@@ -1,3 +1,5 @@
+# Function to compute the majority vote of a set of classifiers
+# on a set of data sets.
 majorityVote <- function(objects_list, newdata_list, ...){
     predictions <- mapply(predict, objects_list, newdata_list, MoreArgs = list(...))
     predictions <- apply(predictions, 1, function(row){
@@ -6,6 +8,8 @@ majorityVote <- function(objects_list, newdata_list, ...){
     })
 }
 
+# Function to perform a brute-force optimization of the parameters
+# of a SVM.
 bruteForceOptimSVM <- function(..., params){
     mean_acc <- vector(mode = "numeric", length = nrow(params))
     for (i in 1:nrow(params)){
@@ -17,6 +21,8 @@ bruteForceOptimSVM <- function(..., params){
     cbind(params, mean_acc)
 }
 
+# Function to perform a brute-force optimization of the parameters
+# of a NN.
 bruteForceOptimNN <- function(..., params){
     mean_acc <- vector(mode = "numeric", length = nrow(params))
     for (i in 1:nrow(params)){
@@ -28,6 +34,8 @@ bruteForceOptimNN <- function(..., params){
     cbind(params, mean_acc)
 }
 
+# Function to create a confidence interval for a set of real values
+# using a t-distribution (thus, not assuming normality of the values).
 createConfidenceInterval <- function(values, confidence = 0.99){
     x <- mean(values)
     s <- sd(values)

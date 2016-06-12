@@ -1,5 +1,6 @@
 library(nnet)
 
+# Function to train the ensemble of neural networks.
 nnEnsemble <- function(data_sets_list, 
                        params_list = list(list(size = 3, decay = 0, maxit = 100)), 
                        pre_process = c("center", "scale")){
@@ -25,6 +26,7 @@ nnEnsemble <- function(data_sets_list,
     nn_ens
 }
 
+# Generic predict function for the ensemble of neural networks.
 predict.nn_ensemble <- function(object, newdata, ...){
     # object: A list of nns
     # newdata: A list of data sets to predict

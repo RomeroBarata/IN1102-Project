@@ -1,5 +1,7 @@
 library(plyr)
 
+# Function to create the stratified folds given the classes
+# of the examples.
 createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps <- list()
     classes_dist <- daply(y, .(Class), nrow)
@@ -16,6 +18,8 @@ createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps
 }
 
+# Function that implements the repeated cross-validated
+# training process.
 repeatedCVTrain <- function(method, data_list, 
                             method_args = list(list()), 
                             seed = NULL, pre_process = NULL, ...){
@@ -28,6 +32,7 @@ repeatedCVTrain <- function(method, data_list,
                           Accuracy_MEAN = mean(results), Accuracy_SD = sd(results))
 }
 
+# Auxiliary function for the repeatedCVTrain function.
 cvTrain <- function(spartition, data_list, 
                     method, method_args = list(list()), pre_process = NULL){
     nfolds <- length(unique(spartition))
@@ -50,12 +55,16 @@ cvTrain <- function(spartition, data_list,
     accuracy
 }
 
+# Auxiliary function for the cvTrain function to extract the training
+# set from a data set given the stratified partition.
 splitCVTrain <- function(data_sets_list, spartition, i){
     lapply(data_sets_list, function(data, spartition, i){
         data[!(spartition == i), ]
     }, spartition = spartition, i = i)
 }
 
+# Auxiliary function for the cvTrain function to extract the testing
+# set from a data set given the stratified partition.
 splitCVTest <- function(data_sets_list, spartition, i){
     lapply(data_sets_list, function(data, spartition, i){
         data[spartition == i, -ncol(data)]

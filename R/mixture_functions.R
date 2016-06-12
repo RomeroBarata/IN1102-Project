@@ -1,3 +1,4 @@
+# Function to train the mixture of ensembles.
 mixture <- function(data_sets_list, params_list = NULL, 
                     pre_process = c("center", "scale")){
     bayes_ens <- bayesEnsemble(data_sets_list)
@@ -12,6 +13,7 @@ mixture <- function(data_sets_list, params_list = NULL,
     mix_ens
 }
 
+# Generic predict function for the mix of ensembles.
 predict.mix_ens <- function(object, newdata, ...){
     predictions <- sapply(object, predict, newdata = newdata, ...)
     apply(predictions, 1, function(row){
