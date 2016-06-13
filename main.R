@@ -1,3 +1,8 @@
+if (!require(needs)) install.packages('needs')
+# Import the necessary packages
+library(needs)
+needs(PMCMR, plyr, nnet, ggplot2, kernlab)
+
 # Define constants
 R_PATH <- "R"
 DATA_PATH <- "data"
@@ -81,7 +86,7 @@ test <- friedman.test(accuracy_matrix)
 print(test)
 
 # Performing statistical post-test
-post_test <- PMCMR::posthoc.friedman.nemenyi.test(accuracy_matrix)
+post_test <- posthoc.friedman.nemenyi.test(accuracy_matrix)
 print(post_test)
 
 # Build a data frame for the plotting function

@@ -1,5 +1,3 @@
-library(plyr)
-
 # Function to create the stratified folds given the classes
 # of the examples.
 createStratifiedFolds <- function(y, folds = 10, repeats = 5){

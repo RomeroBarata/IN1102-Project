@@ -1,5 +1,3 @@
-library(ggplot2)
-
 # Function to create an appropriate data frame for 
 # the ggplot function of the ggplot2 package.
 buildPlotDataFrame <- function(bayes, svm, nn, mix){

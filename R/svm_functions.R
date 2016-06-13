@@ -1,5 +1,3 @@
-library(kernlab)
-
 # Function to train an ensemble of SVMs.
 svmEnsemble <- function(data_sets_list, 
                         params_list = list(list(C = 1)), 

@@ -1,5 +1,3 @@
-library(nnet)
-
 # Function to train the ensemble of neural networks.
 nnEnsemble <- function(data_sets_list, 
                        params_list = list(list(size = 3, decay = 0, maxit = 100)), 
