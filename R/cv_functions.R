@@ -1,5 +1,7 @@
 library(plyr)
 
+# Function to create the stratified folds given the classes
+# of the examples.
 createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps <- list()
     classes_dist <- daply(y, .(Class), nrow)
@@ -16,8 +18,11 @@ createStratifiedFolds <- function(y, folds = 10, repeats = 5){
     sps
 }
 
+# Function that implements the repeated cross-validated
+# training process.
 repeatedCVTrain <- function(method, data_list, 
-                            method_args = list(), seed = NULL, pre_process = NULL, ...){
+                            method_args = list(list()), 
+                            seed = NULL, pre_process = NULL, ...){
     y <- data_list[[1]][ncol(data_list[[1]])]
     if (!is.null(seed)) set.seed(seed)
     sps <- createStratifiedFolds(y, ...)
@@ -27,38 +32,39 @@ repeatedCVTrain <- function(method, data_list,
                           Accuracy_MEAN = mean(results), Accuracy_SD = sd(results))
 }
 
+# Auxiliary function for the repeatedCVTrain function.
 cvTrain <- function(spartition, data_list, 
-                    method, method_args = list(), pre_process = NULL){
+                    method, method_args = list(list()), pre_process = NULL){
     nfolds <- length(unique(spartition))
+    method_args <- if (sum(sapply(method_args, length)) > 0) method_args else NULL
     accuracy <- vector(mode = "numeric", length = nfolds)
     for(i in 1:nfolds){
         training_list <- splitCVTrain(data_list, spartition, i)
-        # Pre-process the training sets
-        pre_processed_training_list <- lapply(training_list, 
-                                              preProcessTraining, pre_process = pre_process)
-        training_list <- extractTrainingSets(pre_processed_training_list)
         # Train the model
-        model <- do.call(method, c(list(training_list), method_args))
+        if (!is.null(method_args))
+            model <- do.call(method, list(training_list, method_args, pre_process))
+        else
+            model <- do.call(method, list(training_list, pre_process))
         
         testing_list <- splitCVTest(data_list, spartition, i)
-        # Pre-process the training sets
-        testing_list <- mapply(preProcessTesting, 
-                               testing_list, pre_processed_training_list, 
-                               MoreArgs = list(pre_process = pre_process), SIMPLIFY = FALSE)
         # Make the predictions
-        predictions <- predict(model, testing_list)
+        predictions <- predict(model, testing_list, pre_process = pre_process)
         
         accuracy[i] <- mean(predictions == data_list[[1]][spartition == i, ]$Class)
     }
     accuracy
 }
 
+# Auxiliary function for the cvTrain function to extract the training
+# set from a data set given the stratified partition.
 splitCVTrain <- function(data_sets_list, spartition, i){
     lapply(data_sets_list, function(data, spartition, i){
         data[!(spartition == i), ]
     }, spartition = spartition, i = i)
 }
 
+# Auxiliary function for the cvTrain function to extract the testing
+# set from a data set given the stratified partition.
 splitCVTest <- function(data_sets_list, spartition, i){
     lapply(data_sets_list, function(data, spartition, i){
         data[spartition == i, -ncol(data)]

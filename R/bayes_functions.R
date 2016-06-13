@@ -1,3 +1,5 @@
+# Function to train an individual Bayes classifier
+# on a individual data set.
 bayes <- function(training){
     mus <- ddply(training, .(Class), colwise(mean))
     cov_mats <- ddply(training, .(Class), function(x){
@@ -12,12 +14,14 @@ bayes <- function(training){
     bayes_model
 }
 
-bayesEnsemble <- function(data_sets_list){
+# Function to train an ensemble of Bayes classifiers.
+bayesEnsemble <- function(data_sets_list, ...){
     bayes_ens <- lapply(data_sets_list, function(training) bayes(training))
     class(bayes_ens) <- "bayes_ensemble"
     bayes_ens
 }
 
+# Auxiliary function for the bayes function.
 buildModel <- function(mus, cov_mats, a_priori_probs){
     bayes_model <- list()
     for(i in 1:nrow(mus)){
@@ -35,6 +39,7 @@ buildModel <- function(mus, cov_mats, a_priori_probs){
     bayes_model
 }
 
+# Generic predict function for the bayes classifier.
 predict.bayes <- function(object, newdata){
     predictions <- sapply(object, function(dis_fun, newdata){
         apply(newdata, 1, dmvnorm, 
@@ -43,12 +48,14 @@ predict.bayes <- function(object, newdata){
     predictions <- apply(predictions, 1, which.max) - 1
 }
 
-predict.bayes_ensemble <- function(object, newdata){
+# Generic predict function for the ensemble of bayes classifiers.
+predict.bayes_ensemble <- function(object, newdata, ...){
     # object: A list of bayes classifiers
     # newdata: A list of data sets to predict
     majorityVote(object, newdata)
 }
 
+# Computes the density function for a multivariate normal.
 dmvnorm <- function(x, mu, Sigma, log = TRUE){
     if(log){
         p1 <- -0.5 * t(x - mu) %*% solve(Sigma) %*% (x - mu)
@@ -60,12 +67,4 @@ dmvnorm <- function(x, mu, Sigma, log = TRUE){
         p2 <- exp(-0.5 * t(x - mu) %*% solve(Sigma) %*% (x - mu))
         return (p1 * p2)
     }
-}
-
-majorityVote <- function(objects_list, newdata_list){
-    predictions <- mapply(predict, objects_list, newdata_list)
-    predictions <- apply(predictions, 1, function(row){
-        idx <- which.max(table(row))
-        as.integer(names(table(row))[idx])
-    })
 }

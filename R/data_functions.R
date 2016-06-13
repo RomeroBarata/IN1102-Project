@@ -1,3 +1,4 @@
+# Function to read the desired data sets into the workspace.
 readDataSets <- function(data_path, files_names){
     lapply(files_names, function(file_name, data_path){
         read.table(file.path(data_path, file_name), header = FALSE)
@@ -36,14 +37,17 @@ genDissMtcs <- function(data_path, data_files, diss_data_files) {
     return("Done")
 }
 
+# Function to add a class column to the data sets.
 addClasses <- function(data_sets_list){
-    lapply(data_sets_list, transform, Class = rep(0:9, each = 200))
+    lapply(data_sets_list, transform, Class = factor(rep(0:9, each = 200)))
 }
 
+# Function to remove repeated and inconsistent examples.
 cleanDataSets <- function(data_sets_list){
     lapply(data_sets_list, function(data) removeInconsistencies(unique(data)))
 }
 
+# Function to remove inconsistent examples.
 removeInconsistencies <- function(data){
     idx <- rep(FALSE, nrow(data))
     data_atts <- data[, -ncol(data)]
@@ -55,6 +59,8 @@ removeInconsistencies <- function(data){
     data[!idx, ]
 }
 
+# Function to pre-process a data set.
+# Currently the user can only choose to center and scale.
 preProcessTraining <- function(training, pre_process = NULL){
     if (is.null(pre_process)) return(list(training = training))
     
@@ -81,21 +87,32 @@ preProcessTraining <- function(training, pre_process = NULL){
     result
 }
 
+# Auxiliary function to extract the training sets pre-processed by
+# the preProcessTraining function.
 extractTrainingSets <- function(pre_processed_training_list){
     lapply(pre_processed_training_list, function(x) x$training)
 }
 
-preProcessTesting <- function(testing, pre_processed_training, pre_process = NULL){
+# Auxiliary function to extract the center and scale args from the
+# training set pre-processed by the preProcessTraining function.
+extractPreProcessArgs <- function(pre_processed_training_list){
+    lapply(pre_processed_training_list, 
+           function(x) list(center = x$center, scale_factor = x$scale_factor))
+}
+
+# Function to pre-process the testing set based on the center and scale 
+# args from the training sets.
+preProcessTesting <- function(testing, pre_processed_args, pre_process = NULL){
     if (is.null(pre_process)) return(testing)
     
     if ("center" %in% pre_process){
-        center <- pre_processed_training$center
+        center <- pre_processed_args$center
         testing <- t(apply(testing, 1, 
                            function(x, center) x - center, 
                            center = center))
     }
     if ("scale" %in% pre_process){
-        scale_factor <- pre_processed_training$scale_factor
+        scale_factor <- pre_processed_args$scale_factor
         testing <- t(apply(testing, 1, 
                            function(x, scale_factor) x / scale_factor, 
                            scale_factor = scale_factor))
